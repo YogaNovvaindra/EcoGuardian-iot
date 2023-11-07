@@ -5,7 +5,7 @@ DHTesp dht;
 Adafruit_ADS1115 ads;  /* Use this for the 16-bit version */
 //Adafruit_ADS1015 ads;     /* Use this for the 12-bit version */
 const float MQ2_RL = 10.0;   // Load resistance in ohms
-const float MQ2_R0 = 10.0;   // Sensor resistance at clean air in ohms
+const float MQ2_R0 = 0.01;   // Sensor resistance at clean air in ohms
 
 // Define the constants for calibration (MQ2_LPG, MQ2_CO, MQ2_SMOKE)
 #define MQ2_LPG 0.42 // LPG curve slope
@@ -67,8 +67,12 @@ void loop(void)
   volts1 = ads.computeVolts(adc1);
   volts2 = ads.computeVolts(adc2);
   volts3 = ads.computeVolts(adc3);
+
+  int sensorValue = analogRead(A0);
+  float voltage= sensorValue * (5.0 / 1023.0);
  
   Serial.println("-----------------------------------------------------------");
+  Serial.print("analog: "); Serial.print(analogRead(A0)); Serial.print("  "); Serial.print(voltage); Serial.println("V");
   Serial.print("AIN0: "); Serial.print(adc0); Serial.print("  "); Serial.print(volts0); Serial.println("V");
   Serial.print("AIN1: "); Serial.print(adc1); Serial.print("  "); Serial.print(volts1); Serial.println("V");
   Serial.print("AIN2: "); Serial.print(adc2); Serial.print("  "); Serial.print(volts2); Serial.println("V");
