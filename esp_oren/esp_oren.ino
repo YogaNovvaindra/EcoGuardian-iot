@@ -1,6 +1,9 @@
 #include <Adafruit_ADS1X15.h>
 #include <MQUnifiedsensor.h>
-#include "DHTesp.h"
+#include <DHTesp.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
+#include <Arduino_JSON.h>
 
 #define PM1PIN 12  // DSM501A input D6 on ESP8266 Warna kuning
 #define PM25PIN 14 // warna merah
@@ -15,6 +18,8 @@ unsigned long lowpulseoccupancyPM25 = 0;
 int i = 0;
 float conPM1 = 0;
 float conPM25 = 0;
+float h = 0;
+float t = 0;
 // Definitions
 #define placa "ESP8266"
 #define mq2 "MQ-2"     // MQ2
@@ -37,11 +42,31 @@ MQUnifiedsensor MQ135(placa, Voltage_Resolution, ADC_Bit_Resolution, pin, mq135)
 DHTesp dht;
 Adafruit_ADS1115 ads;
 
+// Connections
+const char *ssid = "SMK TRUNOJOYO";
+const char *password = "tanyamasoki";
+const char *server = "ecoguardian.ygnv.my.id";
+String espId = "cloodu0dk0000pff06r0pacus";
+// #define ledPin 16 // pin D0
+
 void setup(void)
 {
   // Init the serial port communication - to debug the library
   Serial.begin(9600); // Init serial port
   delay(200);
+
+  // Connection begin
+  pinMode(LED_BUILTIN, OUTPUT);
+  WiFi.hostname("ESP Orange");
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print(".");
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+  }
+  digitalWrite(LED_BUILTIN, LOW);
+  // Connection end
 
   pinMode(PM1PIN, INPUT);
   pinMode(PM25PIN, INPUT);
@@ -216,94 +241,160 @@ void loop()
     starttime = millis();
   }
   // Print the values on the serial monitor
-  Serial.print("Sensor\t\t\t");
-  Serial.print("Value (ppm)");
-  Serial.println();
+  // Serial.print("Sensor\t\t\t");
+  // Serial.print("Value (ppm)");
+  // Serial.println();
 
-  Serial.print("MQ-135 CO:\t\t");
-  Serial.print(MQ135_CO, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-135 CO:\t\t");
+  // Serial.print(MQ135_CO, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-135 Alcohol:\t");
-  Serial.print(MQ135_Alcohol, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-135 Alcohol:\t");
+  // Serial.print(MQ135_Alcohol, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-135 CO2:\t\t");
-  Serial.print(MQ135_CO2 + 400, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-135 CO2:\t\t");
+  // Serial.print(MQ135_CO2 + 400, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-135 Toluen:\t");
-  Serial.print(MQ135_Toluen, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-135 Toluen:\t");
+  // Serial.print(MQ135_Toluen, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-135 NH4:\t\t");
-  Serial.print(MQ135_NH4, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-135 NH4:\t\t");
+  // Serial.print(MQ135_NH4, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-135 Aceton:\t");
-  Serial.print(MQ135_Aceton, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-135 Aceton:\t");
+  // Serial.print(MQ135_Aceton, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-2 H2:\t\t");
-  Serial.print(MQ2_H2, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-2 H2:\t\t");
+  // Serial.print(MQ2_H2, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-2 LPG:\t\t");
-  Serial.print(MQ2_LPG, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-2 LPG:\t\t");
+  // Serial.print(MQ2_LPG, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-2 CO:\t\t");
-  Serial.print(MQ2_CO, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-2 CO:\t\t");
+  // Serial.print(MQ2_CO, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-2 Alcohol:\t");
-  Serial.print(MQ2_Alcohol, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-2 Alcohol:\t");
+  // Serial.print(MQ2_Alcohol, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-2 Propane:\t");
-  Serial.print(MQ2_Propane, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-2 Propane:\t");
+  // Serial.print(MQ2_Propane, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-7 H2:\t\t");
-  Serial.print(MQ7_H2, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-7 H2:\t\t");
+  // Serial.print(MQ7_H2, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-7 LPG:\t\t");
-  Serial.print(MQ7_LPG, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-7 LPG:\t\t");
+  // Serial.print(MQ7_LPG, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-7 CH4:\t\t");
-  Serial.print(MQ7_CH4, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-7 CH4:\t\t");
+  // Serial.print(MQ7_CH4, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-7 CO:\t\t");
-  Serial.print(MQ7_CO, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-7 CO:\t\t");
+  // Serial.print(MQ7_CO, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  Serial.print("MQ-7 Alcohol:\t");
-  Serial.print(MQ7_Alcohol, 2); // Display with 2 decimal places
-  Serial.println(" ppm");
+  // Serial.print("MQ-7 Alcohol:\t");
+  // Serial.print(MQ7_Alcohol, 2); // Display with 2 decimal places
+  // Serial.println(" ppm");
 
-  float h = dht.getHumidity();
-  float t = dht.getTemperature();
-  Serial.print("Kelembaban:\t\t");
-  Serial.print(h, 2); // Display with 2 decimal places
-  Serial.print("%\t");
+  h = dht.getHumidity();
+  t = dht.getTemperature();
+  // Serial.print("Kelembaban:\t\t");
+  // Serial.print(h, 2); // Display with 2 decimal places
+  // Serial.print("%\t");
 
-  Serial.print("Temperatur:\t\t");
-  Serial.print(t, 2); // Display with 2 decimal places
-  Serial.println("°C");
+  // Serial.print("Temperatur:\t\t");
+  // Serial.print(t, 2); // Display with 2 decimal places
+  // Serial.println("°C");
 
-  Serial.print("PM1:\t\t\t");
-  Serial.print(conPM1, 2); // Display with 2 decimal places
-  Serial.println();
+  // Serial.print("PM1:\t\t\t");
+  // Serial.print(conPM1, 2); // Display with 2 decimal places
+  // Serial.println();
 
-  Serial.print("PM2.5:\t\t\t");
-  Serial.print(conPM25, 2); // Display with 2 decimal places
-  Serial.println();
+  // Serial.print("PM2.5:\t\t\t");
+  // Serial.print(conPM25, 2); // Display with 2 decimal places
+  // Serial.println();
 
-  // Add more sensor data in a similar format
-  delay(2000); // Sampling frequency
+  WiFiClient client;
+  String Link;
+  HTTPClient http;
+  Link = "http://ecoguardian.ygnv.my.id/api/socket/data";
+  http.begin(client, Link);
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("Accept", "application/json");
+  String jsondata = R"({
+    "id_esp": ")" + espId +
+                    R"(",
+    "temperature": )" +
+                    t + R"(,
+    "humidity": )" + h +
+                    R"(,
+    "mq135_co": )" + MQ135_CO +
+                    R"(,
+    "mq135_alcohol": )" +
+                    MQ135_Alcohol + R"(,
+    "mq135_co2": )" +
+                    (MQ135_CO2+400) + R"(,
+    "mq135_toluen": )" +
+                    MQ135_Toluen + R"(,
+    "mq135_nh4": )" +
+                    MQ135_NH4 + R"(,
+    "mq135_aceton": )" +
+                    MQ135_Aceton + R"(,
+    "mq2_h2": )" + MQ2_H2 +
+                    R"(,
+    "mq2_lpg": )" + MQ2_LPG +
+                    R"(,
+    "mq2_co": )" + MQ2_CO +
+                    R"(,
+    "mq2_alcohol": )" +
+                    MQ2_Alcohol + R"(,
+    "mq2_propane": )" +
+                    MQ2_Propane + R"(,
+    "mq7_h2": )" + MQ7_H2 +
+                    R"(,
+    "mq7_lpg": )" + MQ7_LPG +
+                    R"(,
+    "mq7_ch4": )" + MQ7_CH4 +
+                    R"(,
+    "mq7_co": )" + MQ7_CO +
+                    R"(,
+    "mq7_alcohol": )" +
+                    MQ7_Alcohol + R"(,
+    "pm10": )" + conPM1 +
+                    R"(,
+    "pm25": )" + conPM25 +
+                    R"(
+})";
+
+  Serial.print(jsondata);
+
+  int httpCode = http.POST(jsondata);
+  String payload = http.getString();
+  if (httpCode > 0)
+  {
+    Serial.println(httpCode);
+    Serial.println(payload);
+  }
+  else
+  {
+    Serial.println("Error on HTTP request");
+  }
+  http.end();
+
+  delay(60000); // Sampling frequency
 }
 
 float calculateConcentration(long lowpulseInMicroSeconds, long durationinSeconds)
@@ -312,11 +403,11 @@ float calculateConcentration(long lowpulseInMicroSeconds, long durationinSeconds
   float ratio = (lowpulseInMicroSeconds / 1000000.0) / 30.0 * 100.0; // Calculate the ratio
   // float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio - 0.04884;//Calculate the mg/m3
   float concentration = 1.1 * pow(ratio, 3) - 3.8 * pow(ratio, 2) + 520 * ratio + 0.62; // using spec sheet curve
-  Serial.print("lowpulseoccupancy:");
-  Serial.print(lowpulseInMicroSeconds);
-  Serial.print("    ratio:");
-  Serial.print(ratio);
-  Serial.print("    Concentration:");
-  Serial.println(concentration);
+  // Serial.print("lowpulseoccupancy:");
+  // Serial.print(lowpulseInMicroSeconds);
+  // Serial.print("    ratio:");
+  // Serial.print(ratio);
+  // Serial.print("    Concentration:");
+  // Serial.println(concentration);
   return concentration;
 }
