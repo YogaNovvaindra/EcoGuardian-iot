@@ -330,7 +330,7 @@ void loop()
   WiFiClient client;
   String Link;
   HTTPClient http;
-  Link = "http://ecoguardian.ygnv.my.id/api/socket/data";
+  Link = "http://"+server+"/api/socket/data";
   http.begin(client, Link);
   http.addHeader("Content-Type", "application/json");
   http.addHeader("Accept", "application/json");
