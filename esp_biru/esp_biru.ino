@@ -7,6 +7,9 @@
 
 float h = 0;
 float t = 0;
+
+unsigned long previousMillis = 0;
+const long interval = 60000;
 // Definitions
 #define placa "ESP8266"
 #define mq2 "MQ-2"     // MQ2
@@ -42,6 +45,7 @@ void setup(void)
     Serial.begin(9600); // Init serial port
     delay(200);
 
+    // ESP.wdtEnable(WDTO_8S);
     // Connection begin
     pinMode(LED_BUILTIN, OUTPUT);
     WiFi.hostname("ESP BIRU");
@@ -115,8 +119,36 @@ void setup(void)
     MQ7.setR0(calcR0MQ7 / 10);
     Serial.println("  done for MQ-7.");
 }
+
+void reconnectWiFi()
+{
+    Serial.println("Reconnecting to Wi-Fi...");
+    WiFi.reconnect();
+    int attempts = 0;
+    while (WiFi.status() != WL_CONNECTED && attempts < 30)
+    {
+        delay(500);
+        Serial.print(".");
+        attempts++;
+    }
+    if (WiFi.status() == WL_CONNECTED)
+    {
+        // Serial.println("\nConnected to Wi-Fi");
+        digitalWrite(LED_BUILTIN, LOW);
+    }
+    else
+    {
+        // Serial.println("\nFailed to reconnect to Wi-Fi");
+        digitalWrite(LED_BUILTIN, HIGH);
+    }
+}
+
 void loop()
 {
+    if (WiFi.status() != WL_CONNECTED)
+    {
+        reconnectWiFi();
+    }
     // Get data from the sensor
     MQ135.update();
 
@@ -192,11 +224,11 @@ void loop()
     MQ7.setB(-12.35);                     // Configure the equation to calculate Alcohol concentration value
     float MQ7_Alcohol = MQ7.readSensor(); //
     /*
-    Motivation:
-    We have added 200 PPM because when the library is calibrated it assumes the current state of the
-    air as 0 PPM, and it is considered today that the CO2 present in the atmosphere is around 400 PPM.
-    https://www.lavanguardia.com/natural/20190514/462242832581/concentracion-dioxido-cabono-co2-atmosfera-bate-record-historia-humanidad.html
-    */
+      Motivation:
+      We have added 200 PPM because when the library is calibrated it assumes the current state of the
+      air as 0 PPM, and it is considered today that the CO2 present in the atmosphere is around 400 PPM.
+      https://www.lavanguardia.com/natural/20190514/462242832581/concentracion-dioxido-cabono-co2-atmosfera-bate-record-historia-humanidad.html
+      */
 
     // Print the values on the serial monitor
     // Serial.print("Sensor\t\t\t");
@@ -284,70 +316,73 @@ void loop()
     // Serial.print("PM2.5:\t\t\t");
     // Serial.print(conPM25, 2); // Display with 2 decimal places
     // Serial.println();
-
-    WiFiClient client;
-    String Link;
-    HTTPClient http;
-    Link = "http://" + String(server) + "/api/socket/data";
-    http.begin(client, Link);
-    http.addHeader("Content-Type", "application/json");
-    http.addHeader("Accept", "application/json");
-    String jsondata = R"({
+    unsigned long currentMillis = millis();
+    if (currentMillis - previousMillis >= interval)
+    {
+        WiFiClient client;
+        String Link;
+        HTTPClient http;
+        Link = "http://" + String(server) + "/api/socket/data";
+        http.begin(client, Link);
+        http.addHeader("Content-Type", "application/json");
+        http.addHeader("Accept", "application/json");
+        String jsondata = R"({
     "id_esp": ")" + espId +
-                      R"(",
-    "temperature": )" +
-                      t + R"(,
+                          R"(",
+    "temperature": )" + t +
+                          R"(,
     "humidity": )" + h +
-                      R"(,
+                          R"(,
     "mq135_co": )" + MQ135_CO +
-                      R"(,
-    "mq135_alcohol": )" +
-                      MQ135_Alcohol + R"(,
-    "mq135_co2": )" +
-                      (MQ135_CO2 + 400) + R"(,
-    "mq135_toluen": )" +
-                      MQ135_Toluen + R"(,
-    "mq135_nh4": )" +
-                      MQ135_NH4 + R"(,
-    "mq135_aceton": )" +
-                      MQ135_Aceton + R"(,
+                          R"(,
+    "mq135_alcohol": )" + MQ135_Alcohol +
+                          R"(,
+    "mq135_co2": )" + (MQ135_CO2 + 400) +
+                          R"(,
+    "mq135_toluen": )" + MQ135_Toluen +
+                          R"(,
+    "mq135_nh4": )" + MQ135_NH4 +
+                          R"(,
+    "mq135_aceton": )" + MQ135_Aceton +
+                          R"(,
     "mq2_h2": )" + MQ2_H2 +
-                      R"(,
+                          R"(,
     "mq2_lpg": )" + MQ2_LPG +
-                      R"(,
+                          R"(,
     "mq2_co": )" + MQ2_CO +
-                      R"(,
-    "mq2_alcohol": )" +
-                      MQ2_Alcohol + R"(,
-    "mq2_propane": )" +
-                      MQ2_Propane + R"(,
+                          R"(,
+    "mq2_alcohol": )" + MQ2_Alcohol +
+                          R"(,
+    "mq2_propane": )" + MQ2_Propane +
+                          R"(,
     "mq7_h2": )" + MQ7_H2 +
-                      R"(,
+                          R"(,
     "mq7_lpg": )" + MQ7_LPG +
-                      R"(,
+                          R"(,
     "mq7_ch4": )" + MQ7_CH4 +
-                      R"(,
+                          R"(,
     "mq7_co": )" + MQ7_CO +
-                      R"(,
-    "mq7_alcohol": )" +
-                      MQ7_Alcohol +
-                      R"(
+                          R"(,
+    "mq7_alcohol": )" + MQ7_Alcohol +
+                          R"(
 })";
 
-    Serial.print(jsondata);
+        // Serial.print(jsondata);
 
-    int httpCode = http.POST(jsondata);
-    String payload = http.getString();
-    if (httpCode > 0)
-    {
-        Serial.println(httpCode);
-        Serial.println(payload);
+        int httpCode = http.POST(jsondata);
+        String payload = http.getString();
+        if (httpCode > 0)
+        {
+            // Serial.println(httpCode);
+            // Serial.println(payload);
+        }
+        else
+        {
+            Serial.println("Error on HTTP request");
+        }
+        http.end();
+        previousMillis = currentMillis;
     }
-    else
-    {
-        Serial.println("Error on HTTP request");
-    }
-    http.end();
 
-    delay(60000); // Sampling frequency
+    delay(2000); // Sampling frequency
 }

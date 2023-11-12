@@ -20,6 +20,9 @@ float conPM1 = 0;
 float conPM25 = 0;
 float h = 0;
 float t = 0;
+
+unsigned long previousMillis = 0;
+const long interval = 60000;
 // Definitions
 #define placa "ESP8266"
 #define mq2 "MQ-2"     // MQ2
@@ -132,8 +135,36 @@ void setup(void)
   MQ7.setR0(calcR0MQ7 / 10);
   Serial.println("  done for MQ-7.");
 }
+
+void reconnectWiFi()
+{
+  Serial.println("Reconnecting to Wi-Fi...");
+  WiFi.reconnect();
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 30)
+  {
+    delay(500);
+    Serial.print(".");
+    attempts++;
+  }
+  if (WiFi.status() == WL_CONNECTED)
+  {
+    // Serial.println("\nConnected to Wi-Fi");
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  else
+  {
+    // Serial.println("\nFailed to reconnect to Wi-Fi");
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+}
+
 void loop()
 {
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    reconnectWiFi();
+  }
   // Get data from the sensor
   MQ135.update();
 
@@ -326,75 +357,78 @@ void loop()
   // Serial.print("PM2.5:\t\t\t");
   // Serial.print(conPM25, 2); // Display with 2 decimal places
   // Serial.println();
-
-  WiFiClient client;
-  String Link;
-  HTTPClient http;
-  Link = "http://"+server+"/api/socket/data";
-  http.begin(client, Link);
-  http.addHeader("Content-Type", "application/json");
-  http.addHeader("Accept", "application/json");
-  String jsondata = R"({
+  unsigned long currentMillis = millis();
+  if (currentMillis - previousMillis >= interval)
+  {
+    WiFiClient client;
+    String Link;
+    HTTPClient http;
+    Link = "http://" + String(server) + "/api/socket/data";
+    http.begin(client, Link);
+    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Accept", "application/json");
+    String jsondata = R"({
     "id_esp": ")" + espId +
-                    R"(",
+                      R"(",
     "temperature": )" +
-                    t + R"(,
+                      t + R"(,
     "humidity": )" + h +
-                    R"(,
+                      R"(,
     "mq135_co": )" + MQ135_CO +
-                    R"(,
+                      R"(,
     "mq135_alcohol": )" +
-                    MQ135_Alcohol + R"(,
+                      MQ135_Alcohol + R"(,
     "mq135_co2": )" +
-                    (MQ135_CO2+400) + R"(,
+                      (MQ135_CO2 + 400) + R"(,
     "mq135_toluen": )" +
-                    MQ135_Toluen + R"(,
+                      MQ135_Toluen + R"(,
     "mq135_nh4": )" +
-                    MQ135_NH4 + R"(,
+                      MQ135_NH4 + R"(,
     "mq135_aceton": )" +
-                    MQ135_Aceton + R"(,
+                      MQ135_Aceton + R"(,
     "mq2_h2": )" + MQ2_H2 +
-                    R"(,
+                      R"(,
     "mq2_lpg": )" + MQ2_LPG +
-                    R"(,
+                      R"(,
     "mq2_co": )" + MQ2_CO +
-                    R"(,
+                      R"(,
     "mq2_alcohol": )" +
-                    MQ2_Alcohol + R"(,
+                      MQ2_Alcohol + R"(,
     "mq2_propane": )" +
-                    MQ2_Propane + R"(,
+                      MQ2_Propane + R"(,
     "mq7_h2": )" + MQ7_H2 +
-                    R"(,
+                      R"(,
     "mq7_lpg": )" + MQ7_LPG +
-                    R"(,
+                      R"(,
     "mq7_ch4": )" + MQ7_CH4 +
-                    R"(,
+                      R"(,
     "mq7_co": )" + MQ7_CO +
-                    R"(,
+                      R"(,
     "mq7_alcohol": )" +
-                    MQ7_Alcohol + R"(,
+                      MQ7_Alcohol + R"(,
     "pm10": )" + conPM1 +
-                    R"(,
+                      R"(,
     "pm25": )" + conPM25 +
-                    R"(
+                      R"(
 })";
 
-  Serial.print(jsondata);
+    // Serial.print(jsondata);
 
-  int httpCode = http.POST(jsondata);
-  String payload = http.getString();
-  if (httpCode > 0)
-  {
-    Serial.println(httpCode);
-    Serial.println(payload);
+    int httpCode = http.POST(jsondata);
+    String payload = http.getString();
+    if (httpCode > 0)
+    {
+      // Serial.println(httpCode);
+      // Serial.println(payload);
+    }
+    else
+    {
+      Serial.println("Error on HTTP request");
+    }
+    http.end();
+    previousMillis = currentMillis;
   }
-  else
-  {
-    Serial.println("Error on HTTP request");
-  }
-  http.end();
-
-  delay(60000); // Sampling frequency
+  delay(2000); // Sampling frequency
 }
 
 float calculateConcentration(long lowpulseInMicroSeconds, long durationinSeconds)
