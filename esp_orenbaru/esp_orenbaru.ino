@@ -7,6 +7,7 @@
 
 #define PM1PIN 12  // DSM501A input D6 on ESP8266 Warna merah
 #define PM25PIN 14 // warna kuning
+
 byte buff[2];
 unsigned long durationPM1;
 unsigned long durationPM25;
@@ -16,10 +17,10 @@ unsigned long sampletime_ms = 30000;
 unsigned long lowpulseoccupancyPM1 = 0;
 unsigned long lowpulseoccupancyPM25 = 0;
 int i = 0;
-float conPM1 = 0;
-float conPM25 = 0;
-float PM10;
-float PM25;
+float ratio1 = 0;
+float ratio2 = 0;
+float PM10 = 0;
+float PM25 = 0;
 float h = 0;
 float t = 0;
 
@@ -256,18 +257,16 @@ void loop()
   endtime = millis();
   if ((endtime - starttime) > sampletime_ms) // Only after 30s has passed we calcualte the ratio
   {
-    conPM1 = calculateConcentration(lowpulseoccupancyPM1, 30);
-    conPM25 = calculateConcentration(lowpulseoccupancyPM25, 30);
-    if (conPM1 < 0)
-    {
-      conPM1 = 0;
-    }
-    if (conPM25 < 0)
-    {
-      conPM25 = 0;
-    }
-    PM10 = conPM1*1000;
-    PM25 = conPM25*1000;
+    ratio1 = lowpulseoccupancyPM1/(sampletime_ms*10.0);  // Integer percentage 0=>100
+    PM10 = 1.1*pow(ratio1,3)-3.8*pow(ratio1,2)+520*ratio1+0.62; // using spec sheet curve
+
+    ratio2 = lowpulseoccupancyPM25/(sampletime_ms*10.0);  // Integer percentage 0=>100
+    PM25 = 1.1*pow(ratio2,3)-3.8*pow(ratio2,2)+520*ratio2+0.62; // 
+
+    // conPM1 = calculateConcentration(lowpulseoccupancyPM1, 30);
+    // conPM25 = calculateConcentration(lowpulseoccupancyPM25, 30);
+    // PM10 = conPM1*1000;
+    // PM25 = conPM25*1000;
     // Serial.print("PM1 ");
     // Serial.print(conPM1);
     // Serial.print("  PM25 ");
@@ -434,52 +433,4 @@ void loop()
     previousMillis = currentMillis;
   }
   delay(2000); // Sampling frequency
-}
-
-float calculateConcentrationpm25(long lowpulseInMicroSeconds, long durationinSeconds)
-{
-
-  // float ratio = (lowpulseInMicroSeconds / 1000000.0) / 30.0 * 100.0; // Calculate the ratio
-  // float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio - 0.04884;//Calculate the mg/m3
-    float ratio = lowpulseInMicroSeconds/(sampletime_ms*10.0);  // Integer percentage 0=>100
-    float concentration = 1.1*pow(ratio,3)-3.8*pow(ratio,2)+520*ratio+0.62; // using spec sheet curve
-  // Serial.print("lowpulseoccupancy:");
-  // Serial.print(lowpulseInMicroSeconds);
-  // Serial.print("    ratio:");
-  // Serial.print(ratio);
-  // Serial.print("    Concentration:");
-  // Serial.println(concentration);
-  return concentration;
-}
-float calculateConcentrationpm10(long lowpulseInMicroSeconds, long durationinSeconds)
-{
-
-  // float ratio = (lowpulseInMicroSeconds / 1000000.0) / 30.0 * 100.0; // Calculate the ratio
-  // float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio - 0.04884;//Calculate the mg/m3
-    float ratio = lowpulseInMicroSeconds/(sampletime_ms*10.0);  // Integer percentage 0=>100
-    float concentration = 0.518*pow(ratio,3)-4.25*pow(ratio,2)+570.7*ratio+0.78;
-  // Serial.print("lowpulseoccupancy:");
-  // Serial.print(lowpulseInMicroSeconds);
-  // Serial.print("    ratio:");
-  // Serial.print(ratio);
-  // Serial.print("    Concentration:");
-  // Serial.println(concentration);
-  return concentration;
-}
-
-float calculateConcentration(long lowpulseInMicroSeconds, long durationinSeconds)
-{
-
-  float ratio = (lowpulseInMicroSeconds / 1000000.0) / 30.0 * 100.0; // Calculate the ratio
-  // float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio - 0.04884;//Calculate the mg/m3
-  float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio;//Calculate the mg/m3
-    // float ratio = lowpulseInMicroSeconds/(sampletime_ms*10.0);  // Integer percentage 0=>100
-    // float concentration = 0.518*pow(ratio,3)-4.25*pow(ratio,2)+570.7*ratio+0.78;
-  // Serial.print("lowpulseoccupancy:");
-  // Serial.print(lowpulseInMicroSeconds);
-  // Serial.print("    ratio:");
-  // Serial.print(ratio);
-  // Serial.print("    Concentration:");
-  // Serial.println(concentration);
-  return concentration;
 }
