@@ -256,8 +256,8 @@ void loop()
   endtime = millis();
   if ((endtime - starttime) > sampletime_ms) // Only after 30s has passed we calcualte the ratio
   {
-    conPM1 = calculateConcentration(lowpulseoccupancyPM1, 30);
-    conPM25 = calculateConcentration(lowpulseoccupancyPM25, 30);
+    conPM1 = calculateConcentration10(lowpulseoccupancyPM1, 30);
+    conPM25 = calculateConcentration25(lowpulseoccupancyPM25, 30);
     if (conPM1 < 0)
     {
       conPM1 = 0;
@@ -467,14 +467,27 @@ float calculateConcentrationpm10(long lowpulseInMicroSeconds, long durationinSec
   return concentration;
 }
 
-float calculateConcentration(long lowpulseInMicroSeconds, long durationinSeconds)
+float calculateConcentration25(long lowpulseInMicroSeconds, long durationinSeconds)
 {
 
   float ratio = (lowpulseInMicroSeconds / 1000000.0) / 30.0 * 100.0; // Calculate the ratio
   // float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio - 0.04884;//Calculate the mg/m3
   float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio;//Calculate the mg/m3
-    // float ratio = lowpulseInMicroSeconds/(sampletime_ms*10.0);  // Integer percentage 0=>100
-    // float concentration = 0.518*pow(ratio,3)-4.25*pow(ratio,2)+570.7*ratio+0.78;
+  // Serial.print("lowpulseoccupancy:");
+  // Serial.print(lowpulseInMicroSeconds);
+  // Serial.print("    ratio:");
+  // Serial.print(ratio);
+  // Serial.print("    Concentration:");
+  // Serial.println(concentration);
+  return concentration;
+}
+
+float calculateConcentration10(long lowpulseInMicroSeconds, long durationinSeconds)
+{
+
+  float ratio = (lowpulseInMicroSeconds / 1000000.0) / 30.0 * 100.0; // Calculate the ratio
+  float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio - 0.04884;//Calculate the mg/m3
+  // float concentration = 0.001915 * pow(ratio,2) + 0.09522 * ratio;//Calculate the mg/m3
   // Serial.print("lowpulseoccupancy:");
   // Serial.print(lowpulseInMicroSeconds);
   // Serial.print("    ratio:");
