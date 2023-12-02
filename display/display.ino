@@ -143,8 +143,8 @@ void suhutemp()
     display.setFont(ArialMT_Plain_16);
     display.drawString(1, 2, String(formattedTemp) + " °C  |  " + String(formattedHum) + " %");
     display.drawHorizontalLine(1, 28, 124);
-    display.setFont(ArialMT_Plain_24);
-    display.drawString(1, 35, polusi);
+    display.setFont(ArialMT_Plain_16);
+    display.drawString(1, 37, polusi);
     // write the buffer to the display
     display.display();
   }
